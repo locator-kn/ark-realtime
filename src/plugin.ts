@@ -17,7 +17,7 @@ class Realtime {
     }
 
     register:IRegister = (server, options, next) => {
-        server = server.select('realtime');
+        //server = server.select('realtime');
         server.bind(this);
         this._register(server, options);
 
@@ -48,12 +48,12 @@ class Realtime {
         });
     }
 
-    emitMessage(namespace:string, message) {
+    emitMessage = (namespace:string, message) => {
         if(typeof message === 'string') {
             message = {message: message};
         }
         this.io.of('/' + namespace).emit('new_message', message);
-    }
+    };
 
     exportApi(server) {
         server.expose('emitMessage', this.emitMessage);
