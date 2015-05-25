@@ -40,7 +40,10 @@ class Realtime {
                 handler: (request, reply) => {
                     var userId:string = request.auth.credentials._id;
                     this.createNameSpace(userId);
-                    reply({message: 'namespace created: ' + userId});
+                    reply({
+                        message: 'namespace created: ' + userId,
+                        namespace: '/' + userId
+                    });
                     this.emitMessage(userId, 'welcome');
                 }
             }
