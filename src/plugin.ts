@@ -10,9 +10,9 @@ class Realtime {
 
     namespaces = {};
 
-    CLIENT_EVENTS:any = [{
+    CLIENT_EVENTS:any = {
         NEW_MESSAGE: 'new_message'
-    }];
+    };
 
     constructor() {
         this.register.attributes = {
@@ -69,8 +69,11 @@ class Realtime {
     }
 
     emitMessage = (namespace:string, message) => {
+        if(!this.namespaces[namespace]) {
+            return;
+        }
         message = this.transformMessage(message);
-        this.io.of('/' + namespace).emit(this.CLIENT_EVENTS.NEW_MESSAGE, message);
+        this.namespaces[namespace].emit(this.CLIENT_EVENTS.NEW_MESSAGE, message);
     };
 
     emit = (namespace:string, event:string, message) => {
