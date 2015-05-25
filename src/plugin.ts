@@ -59,7 +59,7 @@ class Realtime {
 
     emit = (namespace:string, event:string, message) => {
         message = this.transformMessage(message);
-
+        this.io.of('/' + namespace).emit(event, message);
     };
 
     exportApi(server) {
