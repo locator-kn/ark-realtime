@@ -8,7 +8,7 @@ class Realtime {
     socketio:any;
     io:any;
 
-    namespaces: [any] = [];
+    namespaces = {};
 
     CLIENT_EVENTS:any = [{
         NEW_MESSAGE: 'new_message'
@@ -48,9 +48,18 @@ class Realtime {
     }
 
     createNameSpace(namespace:string) {
+        if(this.namespaces[namespace]) {
+            return
+        }
         var nsp = this.io.of('/' + namespace);
         nsp.on('connection', socket => {
             this.namespaces[namespace] = socket;
+
+            socket.on('disconnect', () => {
+                console.log('user', namespace, 'has left');
+                nsp.removeAllListeners('connection');
+                delete this.namespaces[namespace];
+            });
 
             console.log('User', namespace, 'connected');
         });
