@@ -8,6 +8,10 @@ class Realtime {
     socketio:any;
     io:any;
 
+    CLIENT_EVENTS:any = [{
+        NEW_MESSAGE: 'new_message'
+    }];
+
     constructor() {
         this.register.attributes = {
             pkg: require('./../../package.json')
@@ -49,14 +53,31 @@ class Realtime {
     }
 
     emitMessage = (namespace:string, message) => {
-        if(typeof message === 'string') {
-            message = {message: message};
-        }
-        this.io.of('/' + namespace).emit('new_message', message);
+        message = this.transformMessage(message);
+        this.io.of('/' + namespace).emit(this.CLIENT_EVENTS.NEW_MESSAGE, message);
+    };
+
+    emit = (namespace:string, event:string, message) => {
+        message = this.transformMessage(message);
+
     };
 
     exportApi(server) {
         server.expose('emitMessage', this.emitMessage);
+
+        server.expose('getClientEventsList', this.getClientEventsList);
+        server.expose('emit', this.emit);
+    }
+
+    getClientEventsList = () => {
+        return this.CLIENT_EVENTS;
+    };
+
+    private transformMessage(message) {
+        if(typeof message === 'string') {
+            message = {message: message};
+        }
+        return message;
     }
 
     errorInit(error) {
