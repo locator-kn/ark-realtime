@@ -67,10 +67,16 @@ class Realtime {
 
         server.expose('getClientEventsList', this.getClientEventsList);
         server.expose('emit', this.emit);
+        server.expose('broadcast', this.broadcast);
     }
 
     getClientEventsList = () => {
         return this.CLIENT_EVENTS;
+    };
+
+    broadcast = (event: string, message) => {
+        message = this.transformMessage(message);
+        this.io.emit(event, message);
     };
 
     private transformMessage(message) {
