@@ -56,6 +56,9 @@ class Realtime {
         }
         var nsp = this.io.of('/' + namespace);
         nsp.on('connection', socket => {
+            if (this.namespaces[namespace]) {
+                return;
+            }
             this.namespaces[namespace] = socket;
 
             socket.on('disconnect', () => {
