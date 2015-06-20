@@ -89,6 +89,7 @@ class Realtime {
         }
         var nsp = this.io.of('/' + namespace);
         nsp.on('connection', socket => {
+
             if (this.namespaces[namespace]) {
                 return;
             }
@@ -96,6 +97,7 @@ class Realtime {
             this.namespaces[namespace] = socket;
 
             socket.on('disconnect', () => {
+
                 this.userChange(namespace, false);
                 console.log('user', namespace, 'has left');
                 nsp.removeAllListeners('connection');
@@ -107,16 +109,15 @@ class Realtime {
     }
 
     emitMessage = (namespace:string, message) => {
+        this.emit(namespace, this.CLIENT_EVENTS.NEW_MESSAGE, message);
+    };
+
+    emit = (namespace:string, event:string, message) => {
         if (!this.namespaces[namespace]) {
             return;
         }
         message = this.transformMessage(message);
-        this.namespaces[namespace].emit(this.CLIENT_EVENTS.NEW_MESSAGE, message);
-    };
-
-    emit = (namespace:string, event:string, message) => {
-        message = this.transformMessage(message);
-        this.io.of('/' + namespace).emit(event, message);
+        this.namespaces[namespace].emit(event, message);
     };
 
     exportApi(server) {
