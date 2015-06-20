@@ -81,11 +81,11 @@ class Realtime {
                     })
                 }
             }
-        })
+        });
     }
 
     createNameSpace(namespace:string) {
-        if(this.namespaces[namespace]) {
+        if (this.namespaces[namespace]) {
             return
         }
         var nsp = this.io.of('/' + namespace);
@@ -108,7 +108,7 @@ class Realtime {
     }
 
     emitMessage = (namespace:string, message) => {
-        if(!this.namespaces[namespace]) {
+        if (!this.namespaces[namespace]) {
             return;
         }
         message = this.transformMessage(message);
@@ -132,13 +132,13 @@ class Realtime {
         return this.CLIENT_EVENTS;
     };
 
-    broadcast = (event: string, message) => {
+    broadcast = (event:string, message) => {
         message = this.transformMessage(message);
         this.io.emit(event, message);
     };
 
     private transformMessage(message) {
-        if(typeof message === 'string') {
+        if (typeof message === 'string') {
             message = {message: message};
         }
         return message;
