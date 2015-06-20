@@ -90,10 +90,10 @@ class Realtime {
         }
         var nsp = this.io.of('/' + namespace);
         nsp.on('connection', socket => {
-            this.userChange(namespace, true);
             if (this.namespaces[namespace]) {
                 return;
             }
+            this.userChange(namespace, true);
             this.namespaces[namespace] = socket;
 
             socket.on('disconnect', () => {
