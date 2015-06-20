@@ -7,6 +7,7 @@ export default
 class Realtime {
     socketio:any;
     io:any;
+    stats:any = {};
 
     namespaces = {};
 
@@ -28,9 +29,25 @@ class Realtime {
         this._register(server, options);
 
         this.io = this.socketio(server.listener);
+        this.createStatsNamespace();
         this.exportApi(server);
         next();
     };
+
+    createStatsNamespace() {
+        this.stats.ns = this.io.of('/stats');
+        this.stats.usersOnline = 0;
+    }
+
+    userChange(user, wentOnline:boolean) {
+        if (wentOnline) {
+            this.stats.usersOnline++;
+            this.stats.ns.emit('new_user_online', {user: user, usersOnline: this.stats.usersOnline});
+        } else {
+            this.stats.usersOnline--;
+            this.stats.ns.emit('user_went_offline', {user: user, usersOnline: this.stats.usersOnline});
+        }
+    }
 
     private _register(server, options) {
         server.route({
@@ -56,12 +73,14 @@ class Realtime {
         }
         var nsp = this.io.of('/' + namespace);
         nsp.on('connection', socket => {
+            this.userChange(namespace, true);
             if (this.namespaces[namespace]) {
                 return;
             }
             this.namespaces[namespace] = socket;
 
             socket.on('disconnect', () => {
+                this.userChange(namespace, false);
                 console.log('user', namespace, 'has left');
                 nsp.removeAllListeners('connection');
                 delete this.namespaces[namespace];
