@@ -11,6 +11,9 @@ class Realtime {
 
     namespaces = {};
 
+    USER_ONLINE_EVENT:string = 'new_user_online';
+    USER_OFFLINE_EVENT:string = 'user_went_offline';
+
     CLIENT_EVENTS:any = {
         NEW_MESSAGE: 'new_message'
     };
@@ -42,10 +45,10 @@ class Realtime {
     userChange(user, wentOnline:boolean) {
         if (wentOnline) {
             this.stats.usersOnline++;
-            this.stats.ns.emit('new_user_online', {user: user, usersOnline: this.stats.usersOnline});
+            this.stats.ns.emit(this.USER_ONLINE_EVENT, {user: user, usersOnline: this.stats.usersOnline});
         } else {
             this.stats.usersOnline--;
-            this.stats.ns.emit('user_went_offline', {user: user, usersOnline: this.stats.usersOnline});
+            this.stats.ns.emit(this.USER_OFFLINE_EVENT, {user: user, usersOnline: this.stats.usersOnline});
         }
     }
 
@@ -74,7 +77,7 @@ class Realtime {
                     request.reply({
                         usersOnline: this.stats.usersOnline,
                         statsNamespace: '/stats',
-                        events: ['new_user_online', 'user_went_offline']
+                        events: [this.USER_ONLINE_EVENT, this.USER_OFFLINE_EVENT]
                     })
                 }
             }
