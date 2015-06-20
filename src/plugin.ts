@@ -86,7 +86,7 @@ class Realtime {
 
     createNameSpace(namespace:string) {
         if (this.namespaces[namespace]) {
-            return
+            return;
         }
         var nsp = this.io.of('/' + namespace);
         nsp.on('connection', socket => {
