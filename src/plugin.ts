@@ -65,6 +65,20 @@ class Realtime {
                 }
             }
         });
+
+        server.route({
+            method: 'GET',
+            path: '/user/stats',
+            config: {
+                handler: (request, reply) => {
+                    request.reply({
+                        usersOnline: this.stats.usersOnline,
+                        statsNamespace: '/stats',
+                        events: ['new_user_online', 'user_went_offline']
+                    })
+                }
+            }
+        })
     }
 
     createNameSpace(namespace:string) {
