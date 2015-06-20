@@ -74,7 +74,7 @@ class Realtime {
             path: '/user/stats',
             config: {
                 handler: (request, reply) => {
-                    request.reply({
+                    reply({
                         usersOnline: this.stats.usersOnline,
                         statsNamespace: '/stats',
                         events: [this.USER_ONLINE_EVENT, this.USER_OFFLINE_EVENT]
