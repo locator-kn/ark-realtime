@@ -64,7 +64,6 @@ class Realtime {
                         message: 'namespace created: ' + userId,
                         namespace: '/' + userId
                     });
-                    this.emitMessage(userId, 'welcome');
                 }
             }
         });
