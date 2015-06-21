@@ -107,21 +107,61 @@ class Realtime {
             this.namespaces[namespace] = {};
             this.namespaces[namespace].s = socket;
 
-            this.namespaces[namespace].s.on('message_ack', (data) => {
-                // write
-
-                if (this.namespaces[namespace] && this.namespaces[namespace][data.opponent]) {
-                    this.namespaces[namespace][data.opponent].transient = true;
-                    this.updateDatabasesReadState(data.opponent, namespace, data.conversation_id);
+            // get conversations and build up transient namespace
+            this.db.getConversationsByUserId(namespace, (err, conversations) => {
+                if (err) {
+                    console.error('Error while creating transient namespace');
+                    return;
                 }
-                console.log('this.namespaces[' + namespace + '][' + data.opponent+ '].transient = ', true);
+                if (!conversations.length) {
+                    console.log('no converstions available');
+                    return;
+                }
+                conversations.forEach((con:any) => {
+                    var opponent;
+
+                    if (con.user_1 === namespace) {
+                        opponent = con.user_2;
+                    } else {
+                        opponent = con.user_1;
+                    }
+
+                    // save status of read/unread message
+                    this.namespaces[namespace][opponent] = {
+                        transient: con[opponent + '_read'],
+                        persistent: con[opponent + '_read'],
+                        conversation_id: con._id
+                    }
+                });
             });
 
+            // when sending ack
+            this.namespaces[namespace].s.on('message_ack', (data) => {
+                // write
+                if (this.namespaces[data.from] && this.namespaces[data.from][data.opponent]) {
+                    this.namespaces[data.from][data.opponent].transient = true;
+                    console.log('Ack for read message --> set transient flag to true and update db if needed');
+                    this.updateDatabasesReadState(data.from, data.opponent, data.conversation_id);
+                }
+
+            });
+
+            // when disconect
             socket.on('disconnect', () => {
 
                 this.userChange(namespace, false);
                 console.log('user', namespace, 'has left');
                 nsp.removeAllListeners('connection');
+                for (var key in this.namespaces[namespace]) {
+                    if (this.namespaces[namespace].hasOwnProperty(key)) {
+
+                        // don't persist the socket
+                        if (key !== 's') {
+                            this.updateDatabasesReadState(namespace, key, key.conversation_id);
+                        }
+                    }
+                }
+
                 delete this.namespaces[namespace];
             });
 
@@ -142,29 +182,39 @@ class Realtime {
             });
             return;
         }
-        this.namespaces[namespace][message.from] = {
-            transient: false
-        };
+
+        // send transient flag to false
+        if (this.namespaces[namespace][message.from]) {
+            this.namespaces[namespace][message.from].transient = false;
+            console.log('Sending message and setting transient flag to false');
+        }
+
+        // wait 10 seconds before updating db
         setTimeout(() => {
             this.updateDatabasesReadState(message.from, message.to, message.conversation_id);
         }, 10000);
-        console.log('this.namespaces[' + namespace + '][' + message.from + '].transient = ', false);
+
+        // send message
         message = this.transformMessage(message);
         this.namespaces[namespace].s.emit(event, message);
     };
 
     updateDatabasesReadState(from, to, conversation_id) {
+        if (!this.namespaces[to]) {
+            console.log('user went offline, nothing to persist');
+            return;
+        }
         var trans = this.namespaces[to][from].transient;
-        console.log('updateDatabasesReadState compare trans !== pers', trans, this.namespaces[to][from].persistent)
-        if(trans !== this.namespaces[to][from].persistent) {
+        if (trans !== this.namespaces[to][from].persistent) {
             this.namespaces[to][from].persistent = trans;
-            console.log('persistent to from' , to, from, this.namespaces[to][from].persistent )
             // write to database
             var data = {};
             data[to + '_read'] = trans;
             this.db.updateDocumentWithCallback(conversation_id, data, (err, data) => {
                 console.log(err, data);
             });
+        } else {
+            console.log('user has read message, nothing to do here')
         }
     }
 
