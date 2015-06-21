@@ -204,7 +204,7 @@ class Realtime {
     };
 
     updateDatabasesReadState(from, opponent, conversation_id) {
-        if (!this.namespaces[from]) {
+        if (!this.namespaces[from] && !this.namespaces[from][opponent]) {
             console.log('user went offline, unable to persist');
             return;
         }
