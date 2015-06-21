@@ -1,3 +1,5 @@
+import {initLogging, log} from './logging'
+
 export interface IRegister {
     (server:any, options:any, next:any): void;
     attributes?: any;
@@ -31,6 +33,8 @@ class Realtime {
     register:IRegister = (server, options, next) => {
         //server = server.select('realtime');
         server.bind(this);
+
+        initLogging(server);
 
         server.dependency(['ark-database'], (server, continueRegister) => {
 
@@ -114,7 +118,7 @@ class Realtime {
                     return;
                 }
                 if (!conversations.length) {
-                    console.log('no converstions available');
+                    log('no converstions available');
                     return;
                 }
                 conversations.forEach((con:any) => {
@@ -140,7 +144,7 @@ class Realtime {
                 // write
                 if (this.namespaces[data.from] && this.namespaces[data.from][data.opponent]) {
                     this.namespaces[data.from][data.opponent].transient = true;
-                    console.log('Ack for read message --> set transient flag to true and update db if needed');
+                    log('Ack for read message --> set transient flag to true and update db if needed');
                     this.updateDatabasesReadState(data.from, data.opponent, data.conversation_id);
                 }
 
@@ -150,7 +154,7 @@ class Realtime {
             socket.on('disconnect', () => {
 
                 this.userChange(namespace, false);
-                console.log('user', namespace, 'has left');
+                log('user' + namespace + 'has left');
                 nsp.removeAllListeners('connection');
                 for (var key in this.namespaces[namespace]) {
                     if (this.namespaces[namespace].hasOwnProperty(key)) {
@@ -165,7 +169,7 @@ class Realtime {
                 delete this.namespaces[namespace];
             });
 
-            console.log('User', namespace, 'connected');
+            log('User' + namespace + 'connected');
         });
     }
 
@@ -177,12 +181,12 @@ class Realtime {
         if (!this.namespaces[namespace]) {
             var data = {};
             data[namespace + '_read'] = false;
-            console.log('opp not online, update database');
+            log('opp not online, update database');
             this.db.updateDocumentWithCallback(message.conversation_id, data, (err, data) => {
                 if (err) {
-                    console.log('Error updating databse', err);
+                    log('Error updating databse', err);
                 }
-                console.log('updated', data);
+                log('updated', data);
             });
             return;
         }
@@ -190,7 +194,7 @@ class Realtime {
         // send transient flag to false
         if (this.namespaces[namespace][message.from]) {
             this.namespaces[namespace][message.from].transient = false;
-            console.log('Sending message and setting transient flag to false');
+            log('Sending message and setting transient flag to false');
         }
 
         // wait 10 seconds before updating db
@@ -205,7 +209,7 @@ class Realtime {
 
     updateDatabasesReadState(from, opponent, conversation_id) {
         if (!this.namespaces[from] && !this.namespaces[from][opponent]) {
-            console.log('user went offline, unable to persist');
+            log('user went offline, unable to persist');
             return;
         }
         var trans = this.namespaces[from][opponent].transient;
@@ -218,10 +222,10 @@ class Realtime {
                 if (err) {
                     console.error('Updating database failed', err)
                 }
-                console.log('database updated with value: ', trans)
+                log('database updated with value: ', trans)
             });
         } else {
-            console.log('transient value is not different from persistent value, no need to update: value', trans)
+            log('transient value is not different from persistent value, no need to update: value', trans)
         }
     }
 
@@ -251,7 +255,7 @@ class Realtime {
 
     errorInit(error) {
         if (error) {
-            console.log('Error: Failed to load plugin (Realtime):', error);
+            log('Error: Failed to load plugin (Realtime):', error);
         }
     }
 }
