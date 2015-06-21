@@ -211,7 +211,10 @@ class Realtime {
             var data = {};
             data[to + '_read'] = trans;
             this.db.updateDocumentWithCallback(conversation_id, data, (err, data) => {
-                console.log(err, data);
+                if(err) {
+                    console.error('Updating database failed')
+                }
+                console.log('database updated')
             });
         } else {
             console.log('user has read message, nothing to do here')
