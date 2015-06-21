@@ -157,7 +157,7 @@ class Realtime {
 
                         // don't persist the socket
                         if (key !== 's') {
-                            this.updateDatabasesReadState(namespace, key, key.conversation_id);
+                            this.updateDatabasesReadState(key, namespace, key.conversation_id);
                         }
                     }
                 }
@@ -177,8 +177,12 @@ class Realtime {
         if (!this.namespaces[namespace]) {
             var data = {};
             data[namespace + '_read'] = false;
+            console.log('opp not online, update database');
             this.db.updateDocumentWithCallback(message.conversation_id, data, (err, data) => {
-                console.log('opp not online', err, data);
+                if (err) {
+                    console.log('Error updating databse', err);
+                }
+                console.log('updated', data);
             });
             return;
         }
@@ -191,7 +195,7 @@ class Realtime {
 
         // wait 10 seconds before updating db
         setTimeout(() => {
-            this.updateDatabasesReadState(message.from, message.to, message.conversation_id);
+            this.updateDatabasesReadState(message.to, message.from, message.conversation_id);
         }, 10000);
 
         // send message
@@ -199,25 +203,25 @@ class Realtime {
         this.namespaces[namespace].s.emit(event, message);
     };
 
-    updateDatabasesReadState(from, to, conversation_id) {
-        if (!this.namespaces[to]) {
-            console.log('user went offline, nothing to persist');
+    updateDatabasesReadState(from, opponent, conversation_id) {
+        if (!this.namespaces[from]) {
+            console.log('user went offline, unable to persist');
             return;
         }
-        var trans = this.namespaces[to][from].transient;
-        if (trans !== this.namespaces[to][from].persistent) {
-            this.namespaces[to][from].persistent = trans;
+        var trans = this.namespaces[from][opponent].transient;
+        if (trans !== this.namespaces[from][opponent].persistent) {
+            this.namespaces[from][opponent].persistent = trans;
             // write to database
             var data = {};
-            data[to + '_read'] = trans;
+            data[from + '_read'] = trans;
             this.db.updateDocumentWithCallback(conversation_id, data, (err, data) => {
-                if(err) {
-                    console.error('Updating database failed')
+                if (err) {
+                    console.error('Updating database failed', err)
                 }
-                console.log('database updated')
+                console.log('database updated with value: ', trans)
             });
         } else {
-            console.log('user has read message, nothing to do here')
+            console.log('transient value is not different from persistent value, no need to update: value', trans)
         }
     }
 
