@@ -157,7 +157,7 @@ class Realtime {
 
                         // don't persist the socket
                         if (key !== 's') {
-                            this.updateDatabasesReadState(key, namespace, key.conversation_id);
+                            this.updateDatabasesReadState(namespace, key, this.namespaces[namespace][key].conversation_id);
                         }
                     }
                 }
