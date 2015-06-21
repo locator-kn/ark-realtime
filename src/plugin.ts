@@ -11,6 +11,8 @@ class Realtime {
 
     namespaces = {};
 
+    db:any;
+
     USER_ONLINE_EVENT:string = 'new_user_online';
     USER_OFFLINE_EVENT:string = 'user_went_offline';
 
@@ -29,12 +31,20 @@ class Realtime {
     register:IRegister = (server, options, next) => {
         //server = server.select('realtime');
         server.bind(this);
-        this._register(server, options);
 
-        this.io = this.socketio(server.listener);
-        this.createStatsNamespace();
-        this.exportApi(server);
-        next();
+        server.dependency(['ark-database'], (server, continueRegister) => {
+
+            this.db = server.plugins['ark-database'];
+
+            this._register(server, options);
+            this.exportApi(server);
+            this.io = this.socketio(server.listener);
+            this.createStatsNamespace();
+            continueRegister();
+            next();
+        });
+
+
     };
 
     createStatsNamespace() {
@@ -94,7 +104,18 @@ class Realtime {
                 return;
             }
             this.userChange(namespace, true);
-            this.namespaces[namespace] = socket;
+            this.namespaces[namespace] = {};
+            this.namespaces[namespace].s = socket;
+
+            this.namespaces[namespace].s.on('message_ack', (data) => {
+                // write
+
+                if (this.namespaces[namespace] && this.namespaces[namespace][data.opponent]) {
+                    this.namespaces[namespace][data.opponent].transient = true;
+                    this.updateDatabasesReadState(data.opponent, namespace, data.conversation_id);
+                }
+                console.log('this.namespaces[' + namespace + '][' + data.opponent+ '].transient = ', true);
+            });
 
             socket.on('disconnect', () => {
 
@@ -114,11 +135,38 @@ class Realtime {
 
     emit = (namespace:string, event:string, message) => {
         if (!this.namespaces[namespace]) {
+            var data = {};
+            data[namespace + '_read'] = false;
+            this.db.updateDocumentWithCallback(message.conversation_id, data, (err, data) => {
+                console.log('opp not online', err, data);
+            });
             return;
         }
+        this.namespaces[namespace][message.from] = {
+            transient: false
+        };
+        setTimeout(() => {
+            this.updateDatabasesReadState(message.from, message.to, message.conversation_id);
+        }, 10000);
+        console.log('this.namespaces[' + namespace + '][' + message.from + '].transient = ', false);
         message = this.transformMessage(message);
-        this.namespaces[namespace].emit(event, message);
+        this.namespaces[namespace].s.emit(event, message);
     };
+
+    updateDatabasesReadState(from, to, conversation_id) {
+        var trans = this.namespaces[to][from].transient;
+        console.log('updateDatabasesReadState compare trans !== pers', trans, this.namespaces[to][from].persistent)
+        if(trans !== this.namespaces[to][from].persistent) {
+            this.namespaces[to][from].persistent = trans;
+            console.log('persistent to from' , to, from, this.namespaces[to][from].persistent )
+            // write to database
+            var data = {};
+            data[to + '_read'] = trans;
+            this.db.updateDocumentWithCallback(conversation_id, data, (err, data) => {
+                console.log(err, data);
+            });
+        }
+    }
 
     exportApi(server) {
         server.expose('emitMessage', this.emitMessage);
