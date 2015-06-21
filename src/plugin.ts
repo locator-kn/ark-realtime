@@ -128,8 +128,8 @@ class Realtime {
 
                     // save status of read/unread message
                     this.namespaces[namespace][opponent] = {
-                        transient: con[opponent + '_read'],
-                        persistent: con[opponent + '_read'],
+                        transient: con[namespace + '_read'],
+                        persistent: con[namespace + '_read'],
                         conversation_id: con._id
                     }
                 });
