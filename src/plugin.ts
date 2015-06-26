@@ -6,6 +6,7 @@ export interface IRegister {
 export default
 class Realtime {
     socketio:any;
+    boom:any;
     io:any;
     stats:any = {};
 
@@ -25,6 +26,7 @@ class Realtime {
             pkg: require('./../../package.json')
         };
 
+        this.boom = require('boom');
         this.socketio = require('socket.io');
     }
 
@@ -80,9 +82,12 @@ class Realtime {
 
         server.route({
             method: 'GET',
-            path: '/user/stats',
+            path: '/users/stats',
             config: {
                 handler: (request, reply) => {
+                    if (!request.auth.credentials.isAdmin) {
+                        return reply(this.boom.unauthorized(''))
+                    }
                     reply({
                         usersOnline: this.stats.usersOnline,
                         statsNamespace: '/stats',
