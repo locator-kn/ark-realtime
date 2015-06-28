@@ -45,6 +45,9 @@ class Realtime {
             this._register(server, options);
             this.exportApi(server);
             this.io = this.socketio(server.listener);
+            // set max listeners to 0 to remove the actual limit
+            this.io.setMaxListeners(0);
+
             this.createStatsNamespace();
             continueRegister();
             next();
