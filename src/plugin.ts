@@ -209,7 +209,7 @@ class Realtime {
         // wait 10 seconds before updating db
         setTimeout(() => {
             this.updateDatabasesReadState(message.to, message.from, message.conversation_id);
-        }, 10000);
+        }, 500);
 
         // send message
         message = this.transformMessage(message);
