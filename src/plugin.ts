@@ -155,6 +155,9 @@ class Realtime {
                     this.namespaces[data.from][data.opponent].transient = true;
                     log('Ack for read message --> set transient flag to true and update db if needed');
                     this.updateDatabasesReadState(data.from, data.opponent, data.conversation_id);
+                } else {
+                    log('Ack for read message, but opp is offline, updating database directly');
+                    this.updateReadState(data.from, data.conversation_id, true);
                 }
 
             });
@@ -225,17 +228,21 @@ class Realtime {
         if (trans !== this.namespaces[from][opponent].persistent) {
             this.namespaces[from][opponent].persistent = trans;
             // write to database
-            var data = {};
-            data[from + '_read'] = trans;
-            this.db.updateDocumentWithCallback(conversation_id, data, (err, data) => {
-                if (err) {
-                    console.error('Updating database failed', err)
-                }
-                log('database updated with value: ', trans)
-            });
+            this.updateReadState(from, conversation_id, trans);
         } else {
             log('transient value is not different from persistent value, no need to update: value', trans)
         }
+    }
+
+    updateReadState(from:string, conversation_id:string, readState:boolean) {
+        var data = {};
+        data[from + '_read'] = readState;
+        this.db.updateDocumentWithCallback(conversation_id, data, (err, data) => {
+            if (err) {
+                console.error('Updating database failed', err)
+            }
+            log('database updated with value: ', readState)
+        });
     }
 
     exportApi(server) {
