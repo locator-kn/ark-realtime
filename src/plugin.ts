@@ -144,6 +144,7 @@ class Realtime {
 
             this.getCookieInformation(socket.client.request.headers.cookie, (err, data) => {
                 if (err || !data._id) {
+                    console.error('error while trying to get cookie information', err);
                     logErr('error while trying to get cookie information');
                     return
                 }
@@ -166,7 +167,7 @@ class Realtime {
                     return;
                 }
                 this.namespaces[userId].userSocketIds = this._.remove(this.namespaces[userId].userSocketIds, (elem) => {
-                    return elem === socket.id;
+                    return elem !== socket.id;
                 });
 
                 this.userChange(userId, false);
