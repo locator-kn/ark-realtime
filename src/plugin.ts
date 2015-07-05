@@ -139,19 +139,19 @@ class Realtime {
         this.io.on('connection', socket => {
             var userId;
 
-            if(!socket.client.request && socket.client.request.headers.cookie) {
+            if (!socket.client.request && socket.client.request.headers.cookie) {
                 logErr('no cookie available');
                 return
             }
 
             this.getCookieInformation(socket.client.request.headers.cookie, (err, data) => {
-                if(err || !data._id) {
+                if (err || !data._id) {
                     logErr('error while trying to get cookie information');
                     return
                 }
                 userId = data._id;
                 this.createNameSpace(userId);
-                if(this.namespaces[data._id]) {
+                if (this.namespaces[data._id]) {
                     // to make sure that datastructure is valid
                     this.createNameSpace(userId);
 
@@ -163,12 +163,12 @@ class Realtime {
 
 
             socket.on('disconnect', () => {
-                if(!this.namespaces[userId]) {
+                if (!this.namespaces[userId]) {
                     logErr('user disconnect but is not in datastructure');
                     return;
                 }
                 this.namespaces[userId].userSocketIds = this._.remove(this.namespaces[userId].userSocketIds, (elem) => {
-                   return elem === socket.id;
+                    return elem === socket.id;
                 });
 
                 this.userChange(userId, false);
@@ -184,7 +184,7 @@ class Realtime {
                 }
 
                 // destroy datastructure if disconnecting connection was the last connection by this user. BOOOM
-                if(!this.namespaces[userId].userSocketIds.length) {
+                if (!this.namespaces[userId].userSocketIds.length) {
                     log('deleting namespace for user: ' + userId);
                     delete this.namespaces[userId];
                 }
@@ -252,7 +252,7 @@ class Realtime {
 
         var def = this.statehoodArkDef;
         var cm = cookie.match(reg);
-        if(!cm || !cm.length) {
+        if (!cm || !cm.length) {
             return callback('no cookie found');
         }
         var ark_session = cm[0];
@@ -314,7 +314,7 @@ class Realtime {
         //this.namespaces[namespace].s.emit(event, message);
         // iterate over all available socketIoIds and send message
         this.namespaces[namespace].userSocketIds.forEach((socketId) => {
-           this.io.sockets.to(socketId).emit(event, message);
+            this.io.sockets.to(socketId).emit(event, message);
         });
 
     };
