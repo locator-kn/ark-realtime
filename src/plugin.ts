@@ -11,6 +11,8 @@ class Realtime {
     boom:any;
     io:any;
     _:any;
+    statehood:any;
+    statehoodArkDef:any;
     stats:any = {};
 
     namespaces = {};
@@ -24,7 +26,7 @@ class Realtime {
         NEW_MESSAGE: 'new_message'
     };
 
-    constructor() {
+    constructor(env) {
         this.register.attributes = {
             pkg: require('./../../package.json')
         };
@@ -32,6 +34,13 @@ class Realtime {
         this.boom = require('boom');
         this.socketio = require('socket.io');
         this._ = require('lodash');
+        this.statehood = require('statehood');
+
+        this.statehoodArkDef = new this.statehood.Definitions({
+            encoding: 'iron',
+            password: env['COOKIE_SECRET'],
+            isHttpOnly: true
+        });
     }
 
     register:IRegister = (server, options, next) => {
