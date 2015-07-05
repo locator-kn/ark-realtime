@@ -316,6 +316,9 @@ class Realtime {
         this.namespaces[namespace].userSocketIds.forEach((socketId) => {
             this.io.sockets.to(socketId).emit(event, message);
         });
+        this.namespaces[message.from].userSocketIds.forEach((socketId) => {
+            this.io.sockets.to(socketId).emit(event, message);
+        });
 
     };
 
