@@ -61,6 +61,7 @@ class Realtime {
             this.io.httpServer.setMaxListeners(0);
             this.io.sockets.setMaxListeners(0);
             this.createStatsNamespace();
+            this.registerSocketListener();
             continueRegister();
             next();
         });
@@ -117,83 +118,67 @@ class Realtime {
         });
     }
 
-    createNameSpace(namespace:string) {
-        if (this.namespaces[namespace]) {
-            return;
-        }
-        var nsp = this.io.of('/' + namespace);
-        nsp.on('connection', socket => {
+    registerSocketListener() {
 
-            if (this.namespaces[namespace]) {
-                return;
-            }
-            this.userChange(namespace, true);
-            this.namespaces[namespace] = {};
-            this.namespaces[namespace].s = socket;
 
-            // get conversations and build up transient namespace
-            this.db.getConversationsByUserId(namespace, (err, conversations) => {
-                if (err) {
-                    console.error('Error while creating transient namespace');
-                    return;
+        //this.io.set('authorization', (handshakeData, accept) => {
+        //    if (handshakeData.headers.cookie) {
+        //        this.getCookieInformation(handshakeData.headers.cookie, (err, data) => {
+        //            accept(data, !err);
+        //        });
+        //    } else {
+        //        console.log('no cookie');
+        //        return accept('No cookie transmitted.', false);
+        //    }
+        //});
+
+        this.io.on('connection', socket => {
+            var userId;
+
+            this.getCookieInformation(socket.client.request.headers.cookie ,(err, data) => {
+                log('New user online: ' + data._id);
+                userId = data._id;
+                this.createNameSpace(userId);
+                if(this.namespaces[data._id]) {;
+
+                    // to make sure that datastructure is valid
+                    this.createNameSpace(userId);
+
+                    // add socket client to list
+                    this.namespaces[userId].userSocketIds.push(socket.id);
+                    this.onConnection(userId, socket);
                 }
-                if (!conversations.length) {
-                    log('no converstions available');
-                    return;
-                }
-                conversations.forEach((con:any) => {
-                    var opponent;
-
-                    if (con.user_1 === namespace) {
-                        opponent = con.user_2;
-                    } else {
-                        opponent = con.user_1;
-                    }
-
-                    // save status of read/unread message
-                    this.namespaces[namespace][opponent] = {
-                        transient: con[namespace + '_read'],
-                        persistent: con[namespace + '_read'],
-                        conversation_id: con._id
-                    }
-                });
             });
 
-            // when sending ack
-            this.namespaces[namespace].s.on('message_ack', (data) => {
-                // write
-                if (this.namespaces[data.from] && this.namespaces[data.from][data.opponent]) {
-                    this.namespaces[data.from][data.opponent].transient = true;
-                    log('Ack for read message --> set transient flag to true and update db if needed');
-                    this.updateDatabasesReadState(data.from, data.opponent, data.conversation_id);
-                } else {
-                    log('Ack for read message, but opp is offline, updating database directly');
-                    this.updateReadState(data.from, data.conversation_id, true);
-                }
 
-            });
-
-            // when disconect
             socket.on('disconnect', () => {
+                this.namespaces[userId].userSocketIds = this._.remove(this.namespaces[userId].userSocketIds, (elem) => {
+                   return elem === socket.id;
+                });
 
-                this.userChange(namespace, false);
-                log('user' + namespace + 'has left');
-                nsp.removeAllListeners('connection');
-                for (var key in this.namespaces[namespace]) {
-                    if (this.namespaces[namespace].hasOwnProperty(key)) {
+                this.userChange(userId, false);
+                log('user' + userId + 'has left');
+                for (var key in this.namespaces[userId]) {
+                    if (this.namespaces[userId].hasOwnProperty(key)) {
 
                         // don't persist the socket
-                        if (key !== 's') {
-                            this.updateDatabasesReadState(namespace, key, this.namespaces[namespace][key].conversation_id);
+                        if (key !== 's' || key !== 'userSocketIds') {
+                            this.updateDatabasesReadState(userId, key, this.namespaces[userId][key].conversation_id);
                         }
                     }
                 }
 
-                delete this.namespaces[namespace];
+                // destroy datastructure if disconnecting connection was the last connection by this user. BOOOM
+                if(!this.namespaces[userId].userSocketIds.length) {
+                    delete this.namespaces[userId];
+                }
             });
 
-            log('User' + namespace + 'connected');
+
         });
+
+    }
+
     onConnection(namespace, socket) {
         this.userChange(namespace, true);
 
@@ -244,6 +229,34 @@ class Realtime {
             }
         });
     }
+
+    getCookieInformation(cookie:string, callback) {
+        var reg = new RegExp('[; ]ark_session=([^\\s;]*)');
+
+        var def = this.statehoodArkDef;
+        var ark_session = cookie.match(reg)[0];
+        def.parse(ark_session, function (err, state, failed) {
+            console.log('err', err);
+            console.log('state', state);
+            console.log('failed', failed);
+            if (state) {
+                var session = state['ark_session'];
+                return callback(null, session);
+            }
+            callback(err);
+        });
+    }
+
+    createNameSpace(namespace:string) {
+        // create new object in datastructure if not exists
+        if (!this.namespaces[namespace]) {
+            this.namespaces[namespace] = {};
+
+            // create array u for users with the same id (mult. tabs, mobile + web, etc.)
+            // we save the according socketIds
+            this.namespaces[namespace].userSocketIds = [];
+
+        }
     }
 
     emitMessage = (namespace:string, message) => {
@@ -277,7 +290,12 @@ class Realtime {
 
         // send message
         message = this.transformMessage(message);
-        this.namespaces[namespace].s.emit(event, message);
+        //this.namespaces[namespace].s.emit(event, message);
+        // iterate over all available socketIoIds and send message
+        this.namespaces[namespace].userSocketIds.forEach((socketId) => {
+           this.io.sockets.to(socketId).emit(event, message);
+        });
+
     };
 
     updateDatabasesReadState(from, opponent, conversation_id) {
