@@ -10,6 +10,7 @@ class Realtime {
     socketio:any;
     boom:any;
     io:any;
+    _:any;
     stats:any = {};
 
     namespaces = {};
@@ -30,6 +31,7 @@ class Realtime {
 
         this.boom = require('boom');
         this.socketio = require('socket.io');
+        this._ = require('lodash');
     }
 
     register:IRegister = (server, options, next) => {
