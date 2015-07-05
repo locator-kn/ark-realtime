@@ -65,8 +65,6 @@ class Realtime {
             continueRegister();
             next();
         });
-
-
     };
 
     createStatsNamespace() {
@@ -257,14 +255,15 @@ class Realtime {
         }
         var ark_session = cm[0];
         def.parse(ark_session, function (err, state, failed) {
-            console.log('err', err);
-            console.log('state', state);
-            console.log('failed', failed);
+            if(err) {
+                callback(err);
+                return logErr('while cookie parsing:', err, failed);
+            }
             if (state) {
                 var session = state['ark_session'];
+                log('cookie successful parsed:', state);
                 return callback(null, session);
             }
-            callback(err);
         });
     }
 
