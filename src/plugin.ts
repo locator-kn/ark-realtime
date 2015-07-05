@@ -183,6 +183,40 @@ class Realtime {
 
             log('User' + namespace + 'connected');
         });
+    onConnection(namespace, socket) {
+        this.userChange(namespace, true);
+
+        // get conversations and build up transient namespace
+        this.db.getConversationsByUserId(namespace, (err, conversations) => {
+            if (err) {
+                console.error('Error while creating transient namespace');
+                return;
+            }
+            if (!conversations.length) {
+                log('no converstions available');
+                return;
+            }
+            conversations.forEach((con:any) => {
+                var opponent;
+
+                if (con.user_1 === namespace) {
+                    opponent = con.user_2;
+                } else {
+                    opponent = con.user_1;
+                }
+
+                // save status of read/unread message
+                this.namespaces[namespace][opponent] = {
+                    transient: con[namespace + '_read'],
+                    persistent: con[namespace + '_read'],
+                    conversation_id: con._id
+                }
+            });
+        });
+
+        this.registerMessageAck(socket);
+
+    }
     }
 
     emitMessage = (namespace:string, message) => {
