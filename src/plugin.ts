@@ -159,6 +159,9 @@ class Realtime {
 
 
             socket.on('disconnect', () => {
+                if(!this.namespaces[userId]) {
+                    return;
+                }
                 this.namespaces[userId].userSocketIds = this._.remove(this.namespaces[userId].userSocketIds, (elem) => {
                    return elem === socket.id;
                 });
