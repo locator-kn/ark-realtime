@@ -241,7 +241,11 @@ class Realtime {
         var reg = new RegExp('[; ]ark_session=([^\\s;]*)');
 
         var def = this.statehoodArkDef;
-        var ark_session = cookie.match(reg)[0];
+        var cm = cookie.match(reg);
+        if(!cm || !cm.length) {
+            return callback('no cookie found');
+        }
+        var ark_session = cm[0];
         def.parse(ark_session, function (err, state, failed) {
             console.log('err', err);
             console.log('state', state);
