@@ -1,4 +1,4 @@
-import {initLogging, log} from './logging'
+import {initLogging, log, logErr} from './logging'
 
 export interface IRegister {
     (server:any, options:any, next:any): void;
@@ -140,12 +140,13 @@ class Realtime {
             var userId;
 
             if(!socket.client.request && socket.client.request.headers.cookie) {
+                logErr('no cookie available');
                 return
             }
 
             this.getCookieInformation(socket.client.request.headers.cookie, (err, data) => {
                 if(err || !data._id) {
-                    log('error while trying to get cookie information');
+                    logErr('error while trying to get cookie information');
                     return
                 }
                 userId = data._id;
@@ -163,7 +164,7 @@ class Realtime {
 
             socket.on('disconnect', () => {
                 if(!this.namespaces[userId]) {
-                    log('err: user disconnect but is not in datastructure');
+                    logErr('user disconnect but is not in datastructure');
                     return;
                 }
                 this.namespaces[userId].userSocketIds = this._.remove(this.namespaces[userId].userSocketIds, (elem) => {
@@ -200,6 +201,7 @@ class Realtime {
         // get conversations and build up transient namespace
         this.db.getConversationsByUserId(namespace, (err, conversations) => {
             if (err) {
+                logErr('Error while creating transient namespace');
                 console.error('Error while creating transient namespace');
                 return;
             }
