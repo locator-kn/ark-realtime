@@ -217,6 +217,22 @@ class Realtime {
         this.registerMessageAck(socket);
 
     }
+
+    registerMessageAck(socket) {
+        // when sending ack
+
+        socket.on('message_ack', (data) => {
+            // write
+            if (this.namespaces[data.from] && this.namespaces[data.from][data.opponent]) {
+                this.namespaces[data.from][data.opponent].transient = true;
+                log('Ack for read message --> set transient flag to true and update db if needed');
+                this.updateDatabasesReadState(data.from, data.opponent, data.conversation_id);
+            } else {
+                log('Ack for read message, but opp is offline, updating database directly');
+                this.updateReadState(data.from, data.conversation_id, true);
+            }
+        });
+    }
     }
 
     emitMessage = (namespace:string, message) => {
