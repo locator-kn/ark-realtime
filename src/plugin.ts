@@ -135,7 +135,14 @@ class Realtime {
         this.io.on('connection', socket => {
             var userId;
 
-            this.getCookieInformation(socket.client.request.headers.cookie ,(err, data) => {
+            if(!socket.client.request && socket.client.request.headers.cookie) {
+                return
+            }
+
+            this.getCookieInformation(socket.client.request.headers.cookie, (err, data) => {
+                if(err || !data._id) {
+                    return
+                }
                 log('New user online: ' + data._id);
                 userId = data._id;
                 this.createNameSpace(userId);
