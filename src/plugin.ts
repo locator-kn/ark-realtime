@@ -76,10 +76,14 @@ class Realtime {
 
     userChange(user, wentOnline:boolean) {
         if (wentOnline) {
+
+            log('New user online: ' + user);
             this.stats.usersOnline++;
             this.stats.ns.emit(this.USER_ONLINE_EVENT, {user: user, usersOnline: this.stats.usersOnline});
         } else {
             this.stats.usersOnline--;
+
+            log('User offline: ' + user);
             this.stats.ns.emit(this.USER_OFFLINE_EVENT, {user: user, usersOnline: this.stats.usersOnline});
         }
     }
@@ -141,13 +145,12 @@ class Realtime {
 
             this.getCookieInformation(socket.client.request.headers.cookie, (err, data) => {
                 if(err || !data._id) {
+                    log('error while trying to get cookie information');
                     return
                 }
-                log('New user online: ' + data._id);
                 userId = data._id;
                 this.createNameSpace(userId);
-                if(this.namespaces[data._id]) {;
-
+                if(this.namespaces[data._id]) {
                     // to make sure that datastructure is valid
                     this.createNameSpace(userId);
 
@@ -160,6 +163,7 @@ class Realtime {
 
             socket.on('disconnect', () => {
                 if(!this.namespaces[userId]) {
+                    log('err: user disconnect but is not in datastructure');
                     return;
                 }
                 this.namespaces[userId].userSocketIds = this._.remove(this.namespaces[userId].userSocketIds, (elem) => {
@@ -180,6 +184,7 @@ class Realtime {
 
                 // destroy datastructure if disconnecting connection was the last connection by this user. BOOOM
                 if(!this.namespaces[userId].userSocketIds.length) {
+                    log('deleting namespace for user: ' + userId);
                     delete this.namespaces[userId];
                 }
             });
