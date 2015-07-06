@@ -285,6 +285,11 @@ class Realtime {
     };
 
     emit = (namespace:string, event:string, message) => {
+
+        this.namespaces[message.from].userSocketIds.forEach((socketId) => {
+            this.io.sockets.to(socketId).emit(event, message);
+        });
+
         if (!this.namespaces[namespace]) {
             var data = {};
             data[namespace + '_read'] = false;
@@ -316,10 +321,6 @@ class Realtime {
         this.namespaces[namespace].userSocketIds.forEach((socketId) => {
             this.io.sockets.to(socketId).emit(event, message);
         });
-        this.namespaces[message.from].userSocketIds.forEach((socketId) => {
-            this.io.sockets.to(socketId).emit(event, message);
-        });
-
     };
 
     updateDatabasesReadState(from, opponent, conversation_id) {
