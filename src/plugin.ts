@@ -144,8 +144,7 @@ class Realtime {
 
             this.getCookieInformation(socket.client.request.headers.cookie, (err, data) => {
                 if (err || !data._id) {
-                    console.error('error while trying to get cookie information', err);
-                    logErr('error while trying to get cookie information');
+                    logErr('error while trying to get cookie information', err);
                     return
                 }
                 userId = data._id;
