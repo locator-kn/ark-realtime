@@ -8,6 +8,7 @@ export interface IRegister {
 export default
 class Realtime {
     socketio:any;
+    redis:any;
     boom:any;
     io:any;
     _:any;
@@ -33,6 +34,7 @@ class Realtime {
 
         this.boom = require('boom');
         this.socketio = require('socket.io');
+        this.redis = require('socket.io-redis');
         this._ = require('lodash');
         this.statehood = require('statehood');
 
@@ -56,6 +58,7 @@ class Realtime {
             this._register(server, options);
             this.exportApi(server);
             this.io = this.socketio(server.listener);
+            this.io.adapter(this.redis({ host: 'localhost', port: 6379 }));
             // set max listeners to 0 to remove the actual limit
             // keep an eye on that
             this.io.httpServer.setMaxListeners(0);
