@@ -193,32 +193,34 @@ class Realtime {
         this.userChange(namespace, true);
 
         // get conversations and build up transient namespace
-        this.db.getConversationsByUserId(namespace, (err, conversations) => {
-            if (err) {
+        this.db.getConversationsByUserId(namespace)
+            .then(conversations => {
+
+                if (!conversations.length) {
+                    log('no converstions available');
+                    return;
+                }
+                conversations.forEach((con:any) => {
+                    var opponent;
+
+                    if (con.user_1 === namespace) {
+                        opponent = con.user_2;
+                    } else {
+                        opponent = con.user_1;
+                    }
+
+                    // save status of read/unread message
+                    this.namespaces[namespace][opponent] = {
+                        transient: con[namespace + '_read'],
+                        persistent: con[namespace + '_read'],
+                        conversation_id: con._id
+                    }
+                });
+            }).catch(err => {
                 logErr('Error while creating transient namespace');
-                console.error('Error while creating transient namespace');
                 return;
-            }
-            if (!conversations.length) {
-                return;
-            }
-            conversations.forEach((con:any) => {
-                var opponent;
-
-                if (con.user_1 === namespace) {
-                    opponent = con.user_2;
-                } else {
-                    opponent = con.user_1;
-                }
-
-                // save status of read/unread message
-                this.namespaces[namespace][opponent] = {
-                    transient: con[namespace + '_read'],
-                    persistent: con[namespace + '_read'],
-                    conversation_id: con._id
-                }
             });
-        });
+
 
         this.registerMessageAck(socket);
 
@@ -248,7 +250,7 @@ class Realtime {
         }
         var ark_session = cm[0];
         def.parse(ark_session, function (err, state, failed) {
-            if(err) {
+            if (err) {
                 callback(err);
                 return logErr('while cookie parsing:', err, failed);
             }

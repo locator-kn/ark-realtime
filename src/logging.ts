@@ -24,8 +24,8 @@ export function logErr(...args:any[]) {
     }
 
     if (args.length > 1) {
-        server.log(['ark-realtime', 'error'], args[0] + ': ' + args.splice(1).join(''));
+        server.log(['ark-realtime', 'Error'], args[0] + ': ' + args.splice(1).join(''));
     } else {
-        server.log(['ark-realtime', 'error'], args[0]);
+        server.log(['ark-realtime', 'Error'], args[0]);
     }
 }
