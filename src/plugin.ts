@@ -76,13 +76,11 @@ class Realtime {
     userChange(user, wentOnline:boolean) {
         if (wentOnline) {
 
-            log('New user online: ' + user);
             this.stats.usersOnline++;
             this.stats.ns.emit(this.USER_ONLINE_EVENT, {user: user, usersOnline: this.stats.usersOnline});
         } else {
             this.stats.usersOnline--;
 
-            log('User offline: ' + user);
             this.stats.ns.emit(this.USER_OFFLINE_EVENT, {user: user, usersOnline: this.stats.usersOnline});
         }
     }
@@ -139,7 +137,6 @@ class Realtime {
             var userId;
 
             if (!socket.client.request && socket.client.request.headers.cookie) {
-                logErr('no cookie available');
                 return
             }
 
@@ -171,7 +168,6 @@ class Realtime {
                 });
 
                 this.userChange(userId, false);
-                log('user' + userId + 'has left');
                 for (var key in this.namespaces[userId]) {
                     if (this.namespaces[userId].hasOwnProperty(key)) {
 
@@ -184,7 +180,6 @@ class Realtime {
 
                 // destroy datastructure if disconnecting connection was the last connection by this user. BOOOM
                 if (!this.namespaces[userId].userSocketIds.length) {
-                    log('deleting namespace for user: ' + userId);
                     delete this.namespaces[userId];
                 }
             });
@@ -205,7 +200,6 @@ class Realtime {
                 return;
             }
             if (!conversations.length) {
-                log('no converstions available');
                 return;
             }
             conversations.forEach((con:any) => {
@@ -237,10 +231,8 @@ class Realtime {
             // write
             if (this.namespaces[data.from] && this.namespaces[data.from][data.opponent]) {
                 this.namespaces[data.from][data.opponent].transient = true;
-                log('Ack for read message --> set transient flag to true and update db if needed');
                 this.updateDatabasesReadState(data.from, data.opponent, data.conversation_id);
             } else {
-                log('Ack for read message, but opp is offline, updating database directly');
                 this.updateReadState(data.from, data.conversation_id, true);
             }
         });
@@ -262,7 +254,6 @@ class Realtime {
             }
             if (state) {
                 var session = state['ark_session'];
-                log('cookie successful parsed:', state);
                 return callback(null, session);
             }
         });
@@ -293,12 +284,10 @@ class Realtime {
         if (!this.namespaces[namespace]) {
             var data = {};
             data[namespace + '_read'] = false;
-            log('opp not online, update database');
             this.db.updateDocumentWithCallback(message.conversation_id, data, (err, data) => {
                 if (err) {
-                    log('Error updating databse', err);
+                    logErr('Error updating database', err);
                 }
-                log('updated', data);
             });
             return;
         }
@@ -306,7 +295,6 @@ class Realtime {
         // send transient flag to false
         if (this.namespaces[namespace][message.from]) {
             this.namespaces[namespace][message.from].transient = false;
-            log('Sending message and setting transient flag to false');
         }
 
         // wait 10 seconds before updating db
@@ -325,7 +313,6 @@ class Realtime {
 
     updateDatabasesReadState(from, opponent, conversation_id) {
         if (!this.namespaces[from] || !this.namespaces[from][opponent]) {
-            log('user went offline, unable to persist');
             return;
         }
         var trans = this.namespaces[from][opponent].transient;
@@ -343,9 +330,9 @@ class Realtime {
         data[from + '_read'] = readState;
         this.db.updateDocumentWithCallback(conversation_id, data, (err, data) => {
             if (err) {
-                console.error('Updating database failed', err)
+                logErr('Updating database failed', err)
             }
-            log('database updated with value: ', readState)
+            // do nothing with response
         });
     }
 
@@ -375,7 +362,7 @@ class Realtime {
 
     errorInit(error) {
         if (error) {
-            log('Error: Failed to load plugin (Realtime):', error);
+            logErr('Error: Failed to load plugin (Realtime):', error);
         }
     }
 }
