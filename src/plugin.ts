@@ -278,10 +278,7 @@ class Realtime {
     };
 
     emit = (namespace:string, event:string, message) => {
-
-        this.namespaces[message.from].userSocketIds.forEach((socketId) => {
-            this.io.sockets.to(socketId).emit(event, message);
-        });
+        this.emitToUser(message.from, message);
 
         if (!this.namespaces[namespace]) {
             var data = {};
@@ -308,10 +305,16 @@ class Realtime {
         message = this.transformMessage(message);
         //this.namespaces[namespace].s.emit(event, message);
         // iterate over all available socketIoIds and send message
-        this.namespaces[namespace].userSocketIds.forEach((socketId) => {
-            this.io.sockets.to(socketId).emit(event, message);
-        });
+        this.emitToUser(namespace, message);
     };
+
+    emitToUser(user, message) {
+        if(this.namespaces[user] && this.namespaces[user].userSocketIds && this.namespaces[user].userSocketIds.length) {
+            this.namespaces[user].userSocketIds.forEach((socketId) => {
+                this.io.sockets.to(socketId).emit(event, message);
+            });
+        }
+    }
 
     updateDatabasesReadState(from, opponent, conversation_id) {
         if (!this.namespaces[from] || !this.namespaces[from][opponent]) {
