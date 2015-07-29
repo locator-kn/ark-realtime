@@ -137,7 +137,11 @@ class Realtime {
             var userId;
 
             if (!socket.client.request && socket.client.request.headers.cookie) {
-                return
+                return;
+            }
+
+            if (!socket.client.request.headers.cookie) {
+                return;
             }
 
             this.getCookieInformation(socket.client.request.headers.cookie, (err, data) => {
