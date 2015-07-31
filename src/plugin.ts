@@ -287,11 +287,8 @@ class Realtime {
         if (!this.namespaces[namespace]) {
             var data = {};
             data[namespace + '_read'] = false;
-            this.db.updateDocumentWithCallback(message.conversation_id, data, (err, data) => {
-                if (err) {
-                    logErr('Error updating database', err);
-                }
-            });
+            this.db.updateConversation(message.conversation_id, data)
+                .catch(err => logErr('Error updating conversation', err));
             return;
         }
 
@@ -313,7 +310,7 @@ class Realtime {
     };
 
     emitToUser(user, message, event) {
-        if(this.namespaces[user] && this.namespaces[user].userSocketIds && this.namespaces[user].userSocketIds.length) {
+        if (this.namespaces[user] && this.namespaces[user].userSocketIds && this.namespaces[user].userSocketIds.length) {
             this.namespaces[user].userSocketIds.forEach((socketId) => {
                 this.io.sockets.to(socketId).emit(event, message);
             });
@@ -337,12 +334,8 @@ class Realtime {
     updateReadState(from:string, conversation_id:string, readState:boolean) {
         var data = {};
         data[from + '_read'] = readState;
-        this.db.updateDocumentWithCallback(conversation_id, data, (err, data) => {
-            if (err) {
-                logErr('Updating database failed', err)
-            }
-            // do nothing with response
-        });
+        this.db.updateConversation(conversation_id, data)
+            .catch(err => logErr('Error updating conversation', err));
     }
 
     exportApi(server) {
