@@ -50,7 +50,7 @@ class Realtime {
 
         initLogging(server);
 
-        server.dependency(['ark-database'], (server, continueRegister) => {
+        server.dependency('ark-database', (server, continueRegister) => {
 
             this.db = server.plugins['ark-database'];
 
@@ -64,8 +64,8 @@ class Realtime {
             this.createStatsNamespace();
             this.registerSocketListener();
             continueRegister();
-            next();
         });
+        next();
     };
 
     createStatsNamespace() {
