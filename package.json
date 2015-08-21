@@ -1,6 +1,6 @@
 {
   "name": "ark-realtime",
-  "version": "2.3.6",
+  "version": "2.3.7",
   "description": "Ark plugin that powers the server with realtime capabilities (It's doing the websockets stuff)",
   "main": "index.js",
   "scripts": {
@@ -12,12 +12,12 @@
     "url": "git://github.com/locator-kn/ark-realtime.git"
   },
   "peerDependencies": {
-    "hapi": ">=8.x.x"
+    "hapi": ">=9.x.x"
   },
   "devDependencies": {
     "code": "1.x.x",
     "gulp": "^3.8.11",
-    "hapi": "8.x.x",
+    "hapi": "9.x.x",
     "lab": "5.x.x",
     "gulp-jshint": "^1.9.4",
     "gulp-nodemon": "^2.0.2",
